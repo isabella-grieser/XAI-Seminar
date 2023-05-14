@@ -30,7 +30,7 @@ class ExplainableModel:
             self.explainer = shap.TreeExplainer(self.model)
         if save:
             with open(self.path, 'wb') as f:
-                pickle.dump(self. model, f)
+                pickle.dump(self.model, f)
             with open(self.explainer_path, 'wb') as f:
                 pickle.dump(self.explainer, f)
 
