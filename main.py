@@ -1,7 +1,8 @@
+from explanationplots import *
 from model import ExplainableModel
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
+from explanationneighbors import *
 
 feature_description = {
     'Number of p peaks missed': 'The R-Peak to P-Peak difference (Amount of R-Peaks - Amount of P-Peaks)',
@@ -17,7 +18,7 @@ feature_description = {
     'mean1': 'The mean distance between R-Peaks',
     'std1': 'The variance of the distances between R-peaks',
     'q2_1': 'The second quarter of the distribution of the R-peak to R-peak distances'
-    }
+}
 
 
 def get_data():
@@ -35,7 +36,6 @@ def get_data():
 
 
 if __name__ == '__main__':
-
     x_train, y_train, x_test, y_test = get_data()
 
     params = {"objective": "binary:logistic",
@@ -43,25 +43,31 @@ if __name__ == '__main__':
               "tree_method": "gpu_hist"}
 
     feature_names = [
-        "amount", "nameOrig", "oldbalanceOrg", "newbalanceOrig",
-        "nameDest", "oldbalanceDest", "newbalanceDest",
+        "Transaktionswert", "Sender", "alter Kontostand Sender", "neuer Kontostand Sender",
+        "Empfänger", "alter Kontostand Empfänger", "neuer Kontostand Empfänger",
         "type_CASH_IN", "type_CASH_OUT", "type_DEBIT",
         "type_PAYMENT", "type_TRANSFER"
     ]
 
     model = ExplainableModel(x_train, y_train, params=params,
+                             feature_names=feature_names,
                              path="./weights/model.pkl",
                              explainer_path="./weights/explainer.pkl",
                              seed=42)
 
-    model.train(iterations=300, do_train=True, load=False, save=False)
+    # model.train(iterations=300, do_train=True, load=False, save=True)
 
     y_hat = model.predict(x_test)
+    # model.explain(x_test.iloc[0])
 
-    print("F1: " + str(f1_score(y_test, y_hat)))
-    print("Precision: " + str(precision_score(y_test, y_hat)))
-    print("Recall: " + str(recall_score(y_test, y_hat)))
-    print("Accuracy: " + str(accuracy_score(y_test, y_hat)))
+    fig1 = create_feature_importance_plot(model, x_test.iloc[0], feature_names)
+    fig2 = create_class_cluster(model, x_test.iloc[0])
+    fig3 = create_detailed_feature_plot(model, x_test.iloc[0], 0, "amount", x_max=200000)
+    neighbors = get_n_neighbors_information(model, x_test.iloc[0], feature_names, n_neighbors=3)
 
-    print("Explain Plot")
-    model.explain(x_test.iloc[0])
+    # fig1.show()
+    # fig2.show()
+    # fig3.show()
+
+
+

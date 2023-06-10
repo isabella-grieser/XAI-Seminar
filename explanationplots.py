@@ -1,52 +1,99 @@
-from scipy import signal, stats
+import plotly.express as px
+import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 import numpy as np
+import plotly.graph_objects as go
+
+def create_feature_importance_plot(model, x_pred, feature_names, show_feature_amount=5):
+    explain_val = x_pred.to_numpy().reshape(1, -1)
+
+    model.load_explainer()
+    shap = model.explainer.shap_values(explain_val)[0]
+
+    base = model.explainer.expected_value
+
+    val = sum(shap)
+    if val > base:
+        shap = -shap
+
+    mean_importance = np.abs(shap)
+    # sort by feature importance
+    feature_importance = pd.DataFrame(list(zip(feature_names, mean_importance, shap)),
+                                      columns=['col_name', 'feature_importance_val', 'shap_value'])
+    feature_importance.sort_values(by=['feature_importance_val'], ascending=False, inplace=True)
+
+    values = []
+    for i in range(show_feature_amount):
+        feat = feature_importance.iloc[i]
+        values.append([feat['col_name'], feat["shap_value"]])
+
+    sum_rest = feature_importance.iloc[show_feature_amount:]['shap_value'].sum(axis=0)
+    values.append(["other", sum_rest])
+    values.reverse()
+
+    df = pd.DataFrame(values, columns=['label', 'value'])
+    df["positive"] = df["value"] > 0
+
+    max_val = feature_importance.iloc[0]["shap_value"]
+    fig = px.bar(y=df.index, x=df.value, color=df.positive, orientation='h', text=df.label)
+    fig.update_yaxes(showticklabels=False)
+    fig.update_layout(showlegend=False)
+    fig.update_traces(textposition='inside')
+    fig.update_layout(xaxis=dict(range=[-max_val, max_val]))
+
+    return fig
 
 
-def explain_freq_plot(sig, fs=300):
-    fourierTransform = np.fft.fft(sig) / len(sig)
-    fourierTransform = fourierTransform[range(int(len(sig) / 2))]
-    fourierTransform = abs(fourierTransform)
+def create_class_cluster(model, x_pred):
+    x = model.x
+    y = np.array(["Fraud" if f == 1 else "Not Fraud" for f in model.y])
 
-    tpCount = len(sig)
-    values = np.arange(int(tpCount / 2))
-    timePeriod = tpCount / fs
-    frequencies = values / timePeriod
+    scaler = StandardScaler().fit(x)
+    scaled_x = scaler.transform(x)
+    pca = PCA(n_components=2)
+    components = pca.fit_transform(scaled_x)
 
-    f, Pxx_den = signal.periodogram(sig, 300)
-    max_y = max(Pxx_den)  # Find the maximum y value
-    max_amp = max(abs(fourierTransform))
-    max_x = frequencies[fourierTransform.argmax()]
+    x_comp = components[:, 0]
+    y_comp = components[:, 1]
 
-    return max_x, fourierTransform[0:1500], frequencies[0:1500]  # Display only till 50 Hz
+    total_var = pca.explained_variance_ratio_.sum() * 100
+    fig = px.scatter(x=x_comp, y=y_comp, color=y, title=f'Total Explained Variance: {total_var:.2f}%')
+
+    pred_comp = pca.transform(scaler.transform([x_pred]))
+    fig.add_scatter(x=[pred_comp[0][0]], y=[pred_comp[0][1]], mode='markers', marker=dict(size=15, color='green'),
+                    showlegend=False)
+
+    return fig
 
 
-def distribution_score_for_explain(r_peaks, sig):
-    first_peak = r_peaks[0]
-    last_peak = r_peaks[-1]
-    sig = sig[first_peak: last_peak + 1]
-    samples_per_beat = len(sig) / (len(r_peaks) - 1)
-    # Set threshold, Hardcoded for now, Need to automate later
-    lower_thresh = samples_per_beat - 30
-    higher_thresh = samples_per_beat + 30
-    cumdiff = np.diff(r_peaks)
-    # Number of R-R durations lie inside threshold
-    # error1 = ([i for i in cumdiff if i > lower_thresh and i < higher_thresh])
-    slow1 = np.where(cumdiff < lower_thresh)
-    fast1 = np.where(cumdiff > higher_thresh)
-    slow1 = [r_peaks[x + 1] for x in slow1]  # returns index of abnormality
-    fast1 = [r_peaks[x + 1] for x in fast1]  # returns index of abnormality
+def create_detailed_feature_plot(model, x_pred, index, feature, x_min=0, x_max=100000):
+    # my guess: this works better for continuous features than class and classifier/enum features...
+    x = model.x
+    y = model.y
 
-    max1 = np.quantile(cumdiff, 0.5)
-    # max1 = x[np.argmax(y)]
-    # print(max1)
-    lower_thresh = max1 - 30
-    higher_thresh = max1 + 30
-    # Number of R-R durations lie inside threshold
-    len_center_idx = len([i for i in cumdiff if i < lower_thresh and i > higher_thresh])
-    score2 = len_center_idx / len(cumdiff)
-    slow2 = np.where(cumdiff < lower_thresh)
-    fast2 = np.where(cumdiff > higher_thresh)
-    slow2 = [r_peaks[x + 1] for x in slow2]  # returns index of abnormality
-    fast2 = [r_peaks[x + 1] for x in fast2]  # returns index of abnormality
+    df = x
+    df["class"] = y
 
-    return slow1, fast1, slow2, fast2
+    fraud = df[(df["class"] == 1) & (df[feature] > x_min) & (df[feature] < x_max)][feature]
+    normal = df[(df["class"] == 0) & (df[feature] > x_min) & (df[feature] < x_max)][feature]
+
+    fig = go.Figure()
+    fig.add_trace(go.Histogram(
+            x=fraud,
+            histnorm='probability density',
+            name='fraud'
+        ))
+    fig.add_trace(go.Histogram(
+            x=normal,
+            histnorm='probability density',
+            name='normal'
+        ))
+
+
+    fig.add_vline(x=x_pred[index], line_width=3, line_color="green")
+    fig.update_layout(barmode='overlay')
+    fig.update_traces(opacity=0.75)
+    # fig.update_layout(xaxis=dict(range=[x_min, x_max]))
+
+    return fig
