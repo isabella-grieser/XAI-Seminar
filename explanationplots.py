@@ -9,7 +9,6 @@ def create_feature_importance_plot(model, x_pred, feature_names, show_feature_am
     explain_val = x_pred.to_numpy().reshape(1, -1)
 
     model.load_explainer()
-    # remove index from shap value
     shap = model.explainer.shap_values(explain_val)[0]
 
     base = model.explainer.expected_value
@@ -18,6 +17,7 @@ def create_feature_importance_plot(model, x_pred, feature_names, show_feature_am
     if val > base:
         shap = -shap
 
+    # remove index from shap value
     shap = shap[1:]
     mean_importance = np.abs(shap)
     # sort by feature importance

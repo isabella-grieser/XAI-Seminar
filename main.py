@@ -5,12 +5,14 @@ from sklearn.model_selection import train_test_split
 from explanationneighbors import *
 from explanationcounterfactuals import *
 from explanationtexts import *
-
-
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+import plotly.graph_objs as go
 
 feature_description = {
     "Transaktionswert": "text",
-     "alter Kontostand Sender": "text",
+    "alter Kontostand Sender": "text",
     "neuer Kontostand Sender": "text",
     "alter Kontostand Empfänger": "text",
     "neuer Kontostand Empfänger": "text",
@@ -29,9 +31,13 @@ continuous_variables = [feature_names["amount"], feature_names["oldbalanceOrg"],
                         feature_names["oldbalanceDest"], feature_names["newbalanceDest"]]
 
 feat_names = [feature_names["amount"], feature_names["oldbalanceOrg"], feature_names["newbalanceOrig"],
-                        feature_names["oldbalanceDest"], feature_names["newbalanceDest"]]
-def get_data():
+              feature_names["oldbalanceDest"], feature_names["newbalanceDest"]]
 
+# Create the Dash app
+app = dash.Dash(__name__)
+
+
+def get_data():
     df = pd.read_csv("data/paysim.csv")
     df = df.drop("isFlaggedFraud", axis=1)
 
@@ -52,7 +58,6 @@ if __name__ == '__main__':
     params = {"objective": "binary:logistic",
               "verbosity": 1,
               "tree_method": "gpu_hist"}
-
 
     model = ExplainableModel(x_train, y_train, params=params,
                              feature_names=feature_names,
@@ -78,10 +83,95 @@ if __name__ == '__main__':
     # counterfactuals = get_n_counterfactuals(model, df_fraud[0:1], n_factuals=4)
     text = create_explanation_texts(model, df_fraud[0:1], 1, feat_names, feature_description)
 
-    print(text)
-    # fig1.show()
-    # fig2.show()
-    # fig3.show()
+    #define the layout
+    app.layout = html.Div([
+        html.H1("XAI for Fraud Detection"),
+        dcc.Tabs(id="tabs", value='tab-1', children=[
+            dcc.Tab(label='Allgemeine Übersicht', value='tab-1', children=[
+
+            ]),
+            dcc.Tab(label='Deep Dive Verdachtsfall', value='tab-2', children=[
+                html.Div([
+                    html.H2(
+                        "Verteilungen der Featurewerte für die einzelnen Features + wo der jeweilige Datenpunkt liegt"),
+                    dcc.Graph(
+                        id='feature-importance-plot',
+                        figure=create_feature_importance_plot(model, df_fraud.iloc[0], feat_names)
+                    )
+                ]),
+                html.Div([
+                    html.H2("Evtl. Regelbasierte Texgenerierung"),
+                    dcc.Graph(
+                        id='deep-dive-plot-2',
+                        figure={
+                            'data': [
+                                go.Bar(x=[1, 2, 3], y=[5, 7, 9], name='Bar')
+                            ],
+                            'layout': go.Layout(title='Deep Dive Subplot 2')
+                        }
+                    )
+                ])
+            ]),
+            dcc.Tab(label='Deep Dive Vergleichsfall', value='tab-3', children=[
+                html.Div([
+                    html.Div([
+                        html.H2("Übersicht zum aktuellen Fall (eher top level)"),
+                        dcc.Graph(
+                            id='comparison-plot-1',
+                            figure={
+                                'data': [],
+                                'layout': go.Layout(title='Comparison Subplot 1')
+                            }
+                        )
+                    ], className='four columns'),
+                    html.Div([
+                        html.H2("Übersicht zum Vergleichsfall (eher top level)"),
+                        dcc.Graph(
+                            id='comparison-plot-2',
+                            figure={
+                                'data': [],
+                                'layout': go.Layout(title='Comparison Subplot 2')
+                            }
+                        )
+                    ], className='four columns'),
+                    html.Div([
+                        html.H2("Übersicht zum Vergleichsfall (eher top level)"),
+                        dcc.Graph(
+                            id='comparison-plot-3',
+                            figure={
+                                'data': [],
+                                'layout': go.Layout(title='Comparison Subplot 3')
+                            }
+                        )
+                    ], className='four columns')
+                ], className='row')
+            ]),
+            dcc.Tab(label='Interaktiver Tab', value='tab-4', children=[
+                html.Div([
+                    html.H2("Subplot 7"),
+                    dcc.Graph(
+                        id='interactive-plot-1',
+                        figure={
+                            'data': [
+                                go.Scatter(x=[1, 2, 3], y=[1, 3, 2], mode='lines', name='Line')
+                            ],
+                            'layout': go.Layout(title='Interactive Subplot 1')
+                        }
+                    ),
+                    html.H2("Subplot 8"),
+                    dcc.Graph(
+                        id='interactive-plot-2',
+                        figure={
+                            'data': [
+                                go.Bar(x=[1, 2, 3], y=[2, 4, 6], name='Bar')
+                            ],
+                            'layout': go.Layout(title='Interactive Subplot 2')
+                        }
+                    )
+                ])
+            ])
+        ])
+    ])
 
 
-
+    app.run_server(debug=True)
