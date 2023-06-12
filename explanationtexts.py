@@ -1,20 +1,43 @@
+import numpy as np
+import pandas as pd
 
-def create_explanation_texts(plot, most_important_feats, importance_percentages, feature_vec, label, median, feature_description, threshold=.05):
+
+
+def create_explanation_texts(model, x_pred, y_pred, feature_names, feature_description, show_feature_amount=5,
+                             threshold=.05):
+    explain_val = x_pred.iloc[0].to_numpy().reshape(1, -1)[0][1:]
+    model.load_explainer()
+    shap = model.explainer.shap_values(x_pred)[0][1:]
+    median = pd.read_csv(model.helper_data_path)
+
+    # sort by feature importance
+    feature_importance = pd.DataFrame(list(zip(feature_names, shap, explain_val)),
+                                      columns=['col_name', 'shap', 'feature_val'])
+    feature_importance.sort_values(by=['shap'], ascending=False, inplace=True)
+
+    # get the most important feature names
+    most_important_feats = feature_importance['col_name'].to_numpy()[:show_feature_amount]
+
+    # get the feature importance percentage
+    importance = feature_importance['shap'].to_numpy()
+    feature_importance['shap'] = feature_importance['shap'].apply(
+        lambda x: x / np.sum(importance) * 100)
+    importance = feature_importance['shap'].to_numpy()[:show_feature_amount]
 
     full_text = f"Top {len(most_important_feats)} features:\n"
-    comparison_class = " a normal heartbeat signal" if label != "N" else " an atrial fibrillation signal"
-    rel_median = median[median['label'] != label]
+    comparison_class = " a fradulent transaction" if y_pred != 1 else " a normal transaction"
+    rel_median = median[median['isFraud'] != y_pred]
 
-    for feat_name, percent in zip(most_important_feats, importance_percentages):
+    for feat_name, feat_val, percent in zip(feature_importance['col_name'], feature_importance['feature_val'], importance):
         full_text += f"Rel: {round(percent, 2)}%    "
         other_median = rel_median[feat_name].to_numpy()[0]
-        feature_comparison = feature_vec[feat_name].to_numpy()[0] - other_median
-        if feature_comparison < other_median *( 1 -threshold):
+        feature_comparison = feat_val - other_median
+        if feature_comparison < other_median * (1 - threshold):
             comp_string = " is lower than for"
-        elif feature_comparison > other_median *( 1 +threshold):
+        elif feature_comparison > other_median * (1 + threshold):
             comp_string = " is greater than for"
         else:
             comp_string = " is the same as for"
         full_text += feature_description[feat_name] + comp_string + comparison_class + "\n"
 
-    plot.text(0.005, 0.85, full_text, horizontalalignment='left', verticalalignment='center', transform=plot.transAxes, fontsize=15, va='top', wrap=True)
+    return full_text
