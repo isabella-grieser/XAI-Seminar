@@ -6,4 +6,5 @@ shap==0.41.0
 xgboost==1.7.5
 plotly==5.9.0
 dash==2.10.2
+dice_ml==0.9
 
