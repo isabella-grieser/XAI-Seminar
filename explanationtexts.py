@@ -5,9 +5,9 @@ import pandas as pd
 
 def create_explanation_texts(model, x_pred, y_pred, feature_names, feature_description, show_feature_amount=5,
                              threshold=.05):
-    explain_val = x_pred.iloc[0].to_numpy().reshape(1, -1)[0][1:]
+    explain_val = x_pred.iloc[0].to_numpy().reshape(1, -1)[0]
     model.load_explainer()
-    shap = model.explainer.shap_values(x_pred)[0][1:]
+    shap = model.explainer.shap_values(x_pred)[0]
     median = pd.read_csv(model.helper_data_path)
 
     # sort by feature importance
@@ -24,13 +24,15 @@ def create_explanation_texts(model, x_pred, y_pred, feature_names, feature_descr
         lambda x: x / np.sum(importance) * 100)
     importance = feature_importance['shap'].to_numpy()[:show_feature_amount]
 
-    full_text = f"Top {len(most_important_feats)} features:\n"
+    full_text = f"Top {len(most_important_feats)} features:"
     comparison_class = " Betrugstransaktion" if y_pred != 1 else "normalen Transaktion"
     rel_median = median[median['isFraud'] != y_pred]
 
+    index = 1 if y_pred != 1 else 0
+    all_lines = [full_text]
     for feat_name, feat_val, percent in zip(feature_importance['col_name'], feature_importance['feature_val'], importance):
-        full_text += f"Rel: {round(percent, 2)}%    "
-        other_median = rel_median[feat_name].to_numpy()[0]
+        full_text = f"Rel: {round(percent, 2)}%    "
+        other_median = rel_median[feat_name].to_numpy()[index]
         feature_comparison = feat_val - other_median
         if feature_comparison < other_median * (1 - threshold):
             comp_string = " ist geringer als bei einer "
@@ -38,6 +40,7 @@ def create_explanation_texts(model, x_pred, y_pred, feature_names, feature_descr
             comp_string = " ist höher als bei einer "
         else:
             comp_string = " ist gleich einer "
-        full_text += feature_description[feat_name] + comp_string + comparison_class + "\n"
+        full_text += feature_description[feat_name] + comp_string + comparison_class
+        all_lines.append(full_text)
 
-    return full_text
+    return all_lines

@@ -15,7 +15,7 @@ class ExplainableModel:
                  explainer_dice_path="./weights/explainer_dice.pkl",
                  continuous_variables=None,
                  helper_data_path="./weights/helper_data.csv",
-                 knn_path="./weights/knn.csv",
+                 knn_path="./weights/knn.pkl",
                  seed=42):
         self.x = x
         self.y = y

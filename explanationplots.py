@@ -21,7 +21,7 @@ def create_feature_importance_plot(model, x_pred, feature_names, show_feature_am
         shap = -shap
 
     # remove index from shap value
-    shap = shap[1:]
+    shap = shap
     mean_importance = np.abs(shap)
     # sort by feature importance
     feature_importance = pd.DataFrame(list(zip(feature_names, mean_importance, shap)),
@@ -63,11 +63,10 @@ def create_class_cluster(model, x_pred):
     x_comp = components[:, 0]
     y_comp = components[:, 1]
 
-    total_var = pca.explained_variance_ratio_.sum() * 100
-    fig = px.scatter(x=x_comp, y=y_comp, color=y, title=f'Total Explained Variance: {total_var:.2f}%')
+    fig = px.scatter(x=x_comp, y=y_comp, color=y, width=800, height=400)
 
     pred_comp = pca.transform(scaler.transform([x_pred]))
-    fig.add_scatter(x=[pred_comp[0][0]], y=[pred_comp[0][1]], mode='markers', marker=dict(size=15, color='green'),
+    fig.add_scatter(x=[pred_comp[0][0]], y=[pred_comp[0][1]], marker=dict(size=15, color='green'),
                     showlegend=False)
 
     return fig
@@ -96,7 +95,8 @@ def create_detailed_feature_plot(model, x_pred, index, feature, x_min=0, x_max=1
         name='normal'
     ))
 
-    fig.add_vline(x=x_pred[index], line_width=3, line_color="green")
+    val = x_pred[index]
+    fig.add_vline(x=val, line_width=3, line_color="green")
     fig.update_layout(barmode='overlay')
     fig.update_traces(opacity=0.75)
     # fig.update_layout(xaxis=dict(range=[x_min, x_max]))
@@ -108,36 +108,8 @@ def create_table(x, feature_names):
     values = dict(values=[feature_names, x],
                   fill_color='lavender',
                   align='left')
-    return go.Figure(data=[go.Table(header=dict(values=['Features', 'Values']),
+    fig = go.Figure(data=[go.Table(header=dict(values=['Features', 'Values']),
                                     cells=values)])
+    fig.update_layout(width=500, height=500)
+    return fig
 
-
-def create_introduction_page_fig(model, x_pred, feature_names, show_feature_amount=3):
-    fig = make_subplots(
-        rows=2, cols=1,
-        specs=[[{}],
-               [{}]]
-    )
-    list_val = x_pred.to_numpy().reshape(1, -1)[0][1:].tolist()
-    table1 = create_table(list_val, feature_names)
-    neighbors, _ = get_n_neighbors_information(model, x_pred, n_neighbors=1)
-    table2 = create_table(neighbors, feature_names)
-    feat_fig = create_feature_importance_plot(model, x_pred, feature_names, show_feature_amount=show_feature_amount)
-    class_fig = create_class_cluster(model, x_pred)
-
-    return table1, table2, feat_fig, class_fig
-
-def create_deep_dive_page_fig(model, x_pred, feature_names):
-    fig = make_subplots(
-        rows=2, cols=1,
-        specs=[[{}],
-               [{}]]
-    )
-
-    neighbors, _ = get_n_neighbors_information(model, x_pred, n_neighbors=4)
-    table1 = create_table(neighbors, feature_names)
-    table2 = create_table(neighbors, feature_names)
-    table3 = create_table(neighbors, feature_names)
-    table4 = create_table(neighbors, feature_names)
-
-    return table1, table2, table3, table4
