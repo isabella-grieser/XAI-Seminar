@@ -42,7 +42,13 @@ def create_feature_importance_plot(model, x_pred, feature_names, show_feature_am
 
     max_val = feature_importance.iloc[0]["shap_value"]
 
-    return go.Bar(y=df.index, x=df.value, orientation='h', text=df.label), max_val
+    fig = px.bar(y=df.index, x=df.value, color=df.positive, orientation='h', text=df.label)
+    fig.update_yaxes(showticklabels=False)
+    fig.update_layout(showlegend=False)
+    fig.update_traces(textposition='inside')
+    fig.update_layout(xaxis=dict(range=[-max_val, max_val]))
+
+    return fig
 
 
 def create_class_cluster(model, x_pred):
@@ -58,12 +64,13 @@ def create_class_cluster(model, x_pred):
     y_comp = components[:, 1]
 
     total_var = pca.explained_variance_ratio_.sum() * 100
-    subplot1 = go.Scatter(x=x_comp, y=y_comp, color=y)
+    fig = px.scatter(x=x_comp, y=y_comp, color=y, title=f'Total Explained Variance: {total_var:.2f}%')
 
     pred_comp = pca.transform(scaler.transform([x_pred]))
-    subplot2 = go.Scatter(x=[pred_comp[0][0]], y=[pred_comp[0][1]], mode='markers', marker=dict(size=15, color='green'))
+    fig.add_scatter(x=[pred_comp[0][0]], y=[pred_comp[0][1]], mode='markers', marker=dict(size=15, color='green'),
+                    showlegend=False)
 
-    return subplot1, subplot2
+    return fig
 
 
 def create_detailed_feature_plot(model, x_pred, index, feature, x_min=0, x_max=100000):
@@ -115,17 +122,22 @@ def create_introduction_page_fig(model, x_pred, feature_names, show_feature_amou
     table1 = create_table(list_val, feature_names)
     neighbors, _ = get_n_neighbors_information(model, x_pred, n_neighbors=1)
     table2 = create_table(neighbors, feature_names)
+    feat_fig = create_feature_importance_plot(model, x_pred, feature_names, show_feature_amount=show_feature_amount)
+    class_fig = create_class_cluster(model, x_pred)
 
-    """
-    subplot, max_val = create_feature_importance_plot(model, x_pred, feature_names,
-                                                      show_feature_amount=show_feature_amount)
-    fig.add_trace(subplot, row=1, col=1)
-    fig.update_yaxes(showticklabels=False, row=1, col=1)
-    fig.update_layout(showlegend=False, row=1, col=1)
-    fig.update_traces(textposition='inside', row=1, col=1)
-    fig.update_layout(xaxis=dict(range=[-max_val, max_val]), row=1, col=1)
-    subplot1, subplot2 = create_class_cluster(model, x_pred)
+    return table1, table2, feat_fig, class_fig
 
-    fig.add_trace(subplot1, row=2, col=1)
-    """
-    return table1, table2, fig
+def create_deep_dive_page_fig(model, x_pred, feature_names):
+    fig = make_subplots(
+        rows=2, cols=1,
+        specs=[[{}],
+               [{}]]
+    )
+
+    neighbors, _ = get_n_neighbors_information(model, x_pred, n_neighbors=4)
+    table1 = create_table(neighbors, feature_names)
+    table2 = create_table(neighbors, feature_names)
+    table3 = create_table(neighbors, feature_names)
+    table4 = create_table(neighbors, feature_names)
+
+    return table1, table2, table3, table4

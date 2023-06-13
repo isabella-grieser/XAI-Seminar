@@ -80,7 +80,8 @@ if __name__ == '__main__':
     # fig4 = create_introduction_page_fig(model, df_fraud.iloc[0], feat_names, show_feature_amount=3)
     # neighbors = get_n_neighbors_information(model, df_fraud.iloc[0], n_neighbors=3)
     # counterfactuals = get_n_counterfactuals(model, df_fraud[0:1], n_factuals=4)
-    table_basic_1, table_basic_2, fig_basic = create_introduction_page_fig(model, df_fraud.iloc[0], feat_names, show_feature_amount=3)
+    table_basic_1, table_basic_2, fig_feat_basic, fig_class_basic = \
+        create_introduction_page_fig(model, df_fraud.iloc[0], feat_names, show_feature_amount=3)
 
     # fig4.show()
     text = create_explanation_texts(model, df_fraud[0:1], 1, feat_names, feature_description)
@@ -96,9 +97,21 @@ if __name__ == '__main__':
                 html.Div([
                     html.H2("Allgemeine Übersicht"),
                     html.H3(f"Klassifizierung: {label}    Wahrscheinlichkeit: {probability}"),
-                    dcc.Graph(
-                        id='basic-view',
-                        figure=table_basic_1
+                    html.Table(
+                        [html.Tr([html.Th(rowSpan=2),
+                                  html.Th(
+                                      dcc.Graph(
+                        id='class-plot',
+                        figure=fig_class_basic
+                        )),
+                         html.Th(rowSpan=2)
+                        ]),
+                         html.Tr([html.Th(dcc.Graph(
+                            id='basic-feat-view',
+                            figure=fig_feat_basic)
+                            )]
+                         )
+                        ]
                     )
                 ])
             ]),
