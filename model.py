@@ -70,7 +70,12 @@ class ExplainableModel:
                 pickle.dump(self.dice, f)
 
     def predict(self, x):
-        return [round(value) for value in self.predict_proba(x)]
+        if self.model is None:
+            self.model = pickle.load(open(self.path, 'rb'))
+            self.explainer = pickle.load(open(self.explainer_path, 'rb'))
+            self.knn = pickle.load(open(self.knn_path, 'rb'))
+            self.dice = pickle.load(open(self.explainer_dice_path, 'rb'))
+        return self.model.predict(x)
 
     def predict_proba(self, x):
         if self.model is None:
@@ -78,7 +83,7 @@ class ExplainableModel:
             self.explainer = pickle.load(open(self.explainer_path, 'rb'))
             self.knn = pickle.load(open(self.knn_path, 'rb'))
             self.dice = pickle.load(open(self.explainer_dice_path, 'rb'))
-        return self.model.predict(x)
+        return self.model.predict_proba(x)
 
     def load_explainer(self):
         if self.explainer is None:

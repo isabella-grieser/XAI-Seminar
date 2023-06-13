@@ -6,12 +6,12 @@ from explanationneighbors import *
 from explanationcounterfactuals import *
 from explanationtexts import *
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc
+from dash import html
 import plotly.graph_objs as go
 
 feature_description = {
-    "Transaktionswert": "text",
+    "Transaktionswert": "Der Wert dieser Transaktion",
     "alter Kontostand Sender": "text",
     "neuer Kontostand Sender": "text",
     "alter Kontostand Empfänger": "text",
@@ -76,19 +76,31 @@ if __name__ == '__main__':
     df_fraud = df_test[df_test["label"] == 1]
     df_fraud = df_fraud.drop(['label'], axis=1)
 
-    fig1 = create_feature_importance_plot(model, df_fraud.iloc[0], feat_names)
-    fig2 = create_class_cluster(model, df_fraud.iloc[0])
-    fig3 = create_detailed_feature_plot(model, df_fraud.iloc[0], 0, feature_names["amount"], x_max=200000)
-    # neighbors = get_n_neighbors_information(model, df_fraud.iloc[0], feature_names, n_neighbors=3)
+    # fig3 = create_detailed_feature_plot(model, df_fraud.iloc[0], 0, feature_names["amount"], x_max=200000)
+    # fig4 = create_introduction_page_fig(model, df_fraud.iloc[0], feat_names, show_feature_amount=3)
+    # neighbors = get_n_neighbors_information(model, df_fraud.iloc[0], n_neighbors=3)
     # counterfactuals = get_n_counterfactuals(model, df_fraud[0:1], n_factuals=4)
+    table_basic_1, table_basic_2, fig_basic = create_introduction_page_fig(model, df_fraud.iloc[0], feat_names, show_feature_amount=3)
+
+    # fig4.show()
     text = create_explanation_texts(model, df_fraud[0:1], 1, feat_names, feature_description)
 
-    #define the layout
+    label = "Fraud"
+    probability = model.predict_proba(df_fraud[0:1])[0][1]
+
+    # define the layout
     app.layout = html.Div([
         html.H1("XAI for Fraud Detection"),
         dcc.Tabs(id="tabs", value='tab-1', children=[
             dcc.Tab(label='Allgemeine Übersicht', value='tab-1', children=[
-
+                html.Div([
+                    html.H2("Allgemeine Übersicht"),
+                    html.H3(f"Klassifizierung: {label}    Wahrscheinlichkeit: {probability}"),
+                    dcc.Graph(
+                        id='basic-view',
+                        figure=table_basic_1
+                    )
+                ])
             ]),
             dcc.Tab(label='Deep Dive Verdachtsfall', value='tab-2', children=[
                 html.Div([
@@ -172,6 +184,5 @@ if __name__ == '__main__':
             ])
         ])
     ])
-
 
     app.run_server(debug=True)

@@ -25,7 +25,7 @@ def create_explanation_texts(model, x_pred, y_pred, feature_names, feature_descr
     importance = feature_importance['shap'].to_numpy()[:show_feature_amount]
 
     full_text = f"Top {len(most_important_feats)} features:\n"
-    comparison_class = " a fradulent transaction" if y_pred != 1 else " a normal transaction"
+    comparison_class = " Betrugstransaktion" if y_pred != 1 else "normalen Transaktion"
     rel_median = median[median['isFraud'] != y_pred]
 
     for feat_name, feat_val, percent in zip(feature_importance['col_name'], feature_importance['feature_val'], importance):
@@ -33,11 +33,11 @@ def create_explanation_texts(model, x_pred, y_pred, feature_names, feature_descr
         other_median = rel_median[feat_name].to_numpy()[0]
         feature_comparison = feat_val - other_median
         if feature_comparison < other_median * (1 - threshold):
-            comp_string = " is lower than for"
+            comp_string = " ist geringer als bei einer "
         elif feature_comparison > other_median * (1 + threshold):
-            comp_string = " is greater than for"
+            comp_string = " ist höher als bei einer "
         else:
-            comp_string = " is the same as for"
+            comp_string = " ist gleich einer "
         full_text += feature_description[feat_name] + comp_string + comparison_class + "\n"
 
     return full_text
