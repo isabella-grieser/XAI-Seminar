@@ -79,9 +79,11 @@ def create_detailed_feature_plot(model, x_pred, index, feature, x_min=0, x_max=1
 
     df = x
     df["class"] = y
-
-    fraud = df[(df["class"] == 1) & (df[feature] > x_min) & (df[feature] < x_max)][feature]
-    normal = df[(df["class"] == 0) & (df[feature] > x_min) & (df[feature] < x_max)][feature]
+    val = x_pred[index]
+    min_v = x_min if x_min < val else val
+    max_v = x_max if x_max > val else val
+    fraud = df[(df["class"] == 1) & (df[feature] > min_v) & (df[feature] < max_v)][feature]
+    normal = df[(df["class"] == 0) & (df[feature] > min_v) & (df[feature] < max_v)][feature]
 
     fig = go.Figure()
     fig.add_trace(go.Histogram(
@@ -95,7 +97,7 @@ def create_detailed_feature_plot(model, x_pred, index, feature, x_min=0, x_max=1
         name='normal'
     ))
 
-    val = x_pred[index]
+
     fig.add_vline(x=val, line_width=3, line_color="green")
     fig.update_layout(barmode='overlay')
     fig.update_traces(opacity=0.75)

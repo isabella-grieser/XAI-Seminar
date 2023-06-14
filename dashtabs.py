@@ -6,7 +6,8 @@ def create_introduction_page_fig(model, x_pred, feature_names, show_feature_amou
     list_val = x_pred.to_numpy().reshape(1, -1)[0].tolist()
     table1 = create_table(list_val, feature_names)
     neighbors, _ = get_n_neighbors_information(model, x_pred, n_neighbors=1)
-    table2 = create_table(neighbors, feature_names)
+    n = neighbors.to_numpy().reshape(1, -1)[0].tolist()
+    table2 = create_table(n, feature_names)
     feat_fig = create_feature_importance_plot(model, x_pred, feature_names, show_feature_amount=show_feature_amount)
     class_fig = create_class_cluster(model, x_pred)
 

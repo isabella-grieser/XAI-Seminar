@@ -10,6 +10,12 @@ def create_explanation_texts(model, x_pred, y_pred, feature_names, feature_descr
     shap = model.explainer.shap_values(x_pred)[0]
     median = pd.read_csv(model.helper_data_path)
 
+    base = model.explainer.expected_value
+
+    val = sum(shap)
+    if val > base:
+        shap = -shap
+
     # sort by feature importance
     feature_importance = pd.DataFrame(list(zip(feature_names, shap, explain_val)),
                                       columns=['col_name', 'shap', 'feature_val'])
