@@ -4,6 +4,8 @@ from sklearn.model_selection import train_test_split
 from explanationtexts import *
 from dashtabs import *
 from dash import Dash, dcc, html, Input, Output
+import os
+from flask_caching import Cache
 import plotly.graph_objs as go
 
 feature_description = {
@@ -32,6 +34,8 @@ feat_names = [feature_names["amount"], feature_names["oldbalanceOrg"], feature_n
 # Create the Dash app
 app = Dash(__name__)
 
+timeout = 20
+
 
 # all dash callbacks
 @app.callback(
@@ -43,6 +47,7 @@ def change_feat_view(value):
     return create_detailed_feature_plot(model, current_x, index, value, x_max=100000)
 
 
+"""
 @app.callback(
     Output('prediction', 'children'),
     Output('probability', 'children'),
@@ -62,7 +67,7 @@ def change_prediction(transaction, old_konto_orig, new_konto_orig, old_konto_des
     predic_text += "Kein Betrug" if prediction == 0 else "Betrug"
     prob_text = "Wahrscheinlichkeit: " + str(prob)
     return predic_text, prob_text
-
+"""
 
 current_x = None
 
@@ -182,33 +187,34 @@ if __name__ == '__main__':
                         ]
                     )
                 ])
-            ]),
-            dcc.Tab(label='Interaktiver Tab', value='tab-4', children=[
-                html.Div([
-                    html.H2("Ändere Parameter um die Vorhersage zu ändern"),
-                    html.P("Transaktionswert:"),
-                    dcc.Slider(id='transaction', min=0, max=1000000, step=1, value=current_x[0],
-                               marks={x: str(x) for x in range(0, 1000000, 10000)}),
-                    html.P("alter Kontostand Sender:"),
-                    dcc.Slider(id='old-konto-orig', min=0, max=1000000, step=1, value=current_x[1],
-                               marks={x: str(x) for x in range(0, 1000000, 10000)}),
-                    html.P("neuer Kontostand Sender:"),
-                    dcc.Slider(id='new-konto-orig', min=0, max=1000000, step=1, value=current_x[2],
-                               marks={x: str(x) for x in range(0, 1000000, 10000)}),
-                    html.P("alter Kontostand Empfänger:"),
-                    dcc.Slider(id='old-konto-dest', min=0, max=1000000, step=1, value=current_x[3],
-                               marks={x: str(x) for x in range(0, 1000000, 10000)}),
-                    html.P("neuer Kontostand Empfänger:"),
-                    dcc.Slider(id='new-konto-dest', min=0, max=1000000, step=1, value=current_x[4],
-                               marks={x: str(x) for x in range(0, 1000000, 10000)}),
-                ]),
-                html.Div([
-                    html.H2("Veränderter Wert"),
-                    html.P(id='prediction'),
-                    html.P(id='probability')
-                ])
             ])
+
         ])
     ])
-
+    """,
+                dcc.Tab(label='Interaktiver Tab', value='tab-4', children=[
+                    html.Div([
+                        html.H2("Ändere Parameter um die Vorhersage zu ändern"),
+                        html.P("Transaktionswert:"),
+                        dcc.Slider(id='transaction', min=0, max=1000000, step=50000, value=current_x[0],
+                                   marks={x: str(x) for x in range(0, 1000000, 100000)}),
+                        html.P("alter Kontostand Sender:"),
+                        dcc.Slider(id='old-konto-orig', min=0, max=1000000, step=50000, value=current_x[1],
+                                   marks={x: str(x) for x in range(0, 1000000, 100000)}),
+                        html.P("neuer Kontostand Sender:"),
+                        dcc.Slider(id='new-konto-orig', min=0, max=1000000, step=50000, value=current_x[2],
+                                   marks={x: str(x) for x in range(0, 1000000, 100000)}),
+                        html.P("alter Kontostand Empfänger:"),
+                        dcc.Slider(id='old-konto-dest', min=0, max=1000000, step=50000, value=current_x[3],
+                                   marks={x: str(x) for x in range(0, 1000000, 100000)}),
+                        html.P("neuer Kontostand Empfänger:"),
+                        dcc.Slider(id='new-konto-dest', min=0, max=1000000, step=50000, value=current_x[4],
+                                   marks={x: str(x) for x in range(0, 1000000, 1000000)}),
+                    ]),
+                    html.Div([
+                        html.H2("Veränderter Wert"),
+                        html.P(id='prediction'),
+                        html.P(id='probability')
+                    ])
+                ])"""
     app.run_server(debug=True)
