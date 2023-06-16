@@ -13,31 +13,32 @@ def create_explanation_texts(model, x_pred, y_pred, feature_names, feature_descr
     base = model.explainer.expected_value
 
     val = sum(shap)
-    if val > base:
+    if val < base:
         shap = -shap
 
     # sort by feature importance
-    feature_importance = pd.DataFrame(list(zip(feature_names, shap, explain_val)),
-                                      columns=['col_name', 'shap', 'feature_val'])
+    feature_importance = pd.DataFrame(list(zip(feature_names, abs(shap), shap, explain_val)),
+                                      columns=['col_name', 'shap', 'shap2', 'feature_val'])
     feature_importance.sort_values(by=['shap'], ascending=False, inplace=True)
 
     # get the most important feature names
     most_important_feats = feature_importance['col_name'].to_numpy()[:show_feature_amount]
 
     # get the feature importance percentage
-    importance = feature_importance['shap'].to_numpy()
+    importance = abs(feature_importance['shap'].to_numpy())
     feature_importance['shap'] = feature_importance['shap'].apply(
         lambda x: x / np.sum(importance) * 100)
     importance = feature_importance['shap'].to_numpy()[:show_feature_amount]
 
-    full_text = f"Top {len(most_important_feats)} features:"
+    full_text = f"Die {len(most_important_feats)} wichtigsten features:"
     comparison_class = " Betrugstransaktion" if y_pred != 1 else "normalen Transaktion"
     rel_median = median[median['isFraud'] != y_pred]
 
     index = 1 if y_pred != 1 else 0
     all_lines = [full_text]
-    for feat_name, feat_val, percent in zip(feature_importance['col_name'], feature_importance['feature_val'], importance):
-        full_text = f"Rel: {round(percent, 2)}%    "
+    for feat_name, feat_val, percent, s in zip(feature_importance['col_name'], feature_importance['feature_val'], importance, feature_importance["shap2"]):
+        pro_con = "dafür" if s > 0 else "dagegen"
+        full_text = f"Relevanz: {round(percent, 2)}%; Feature spricht {pro_con}: "
         other_median = rel_median[feat_name].to_numpy()[index]
         feature_comparison = feat_val - other_median
         if feature_comparison < other_median * (1 - threshold):

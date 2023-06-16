@@ -47,7 +47,7 @@ def change_feat_view(value):
     return create_detailed_feature_plot(model, current_x, index, value, x_max=100000)
 
 
-"""
+
 @app.callback(
     Output('prediction', 'children'),
     Output('probability', 'children'),
@@ -63,11 +63,11 @@ def change_prediction(transaction, old_konto_orig, new_konto_orig, old_konto_des
     prediction = model.predict(df)[0]
     prob = model.predict_proba(df)[0][prediction]
 
-    predic_text = "Vorhersage"
+    predic_text = "Vorhersage: "
     predic_text += "Kein Betrug" if prediction == 0 else "Betrug"
     prob_text = "Wahrscheinlichkeit: " + str(prob)
     return predic_text, prob_text
-"""
+
 
 current_x = None
 
@@ -78,6 +78,11 @@ def get_data():
 
     df = df.drop(['nameOrig', 'nameDest', 'type', 'step'], axis=1)
 
+    #there are massive performance issues because the dataset is far too big
+    # possible solution: drop random values over oversampled class isFraud=0
+    remove_n = 4000000
+    drop_indices = np.random.choice(df[df['isFraud'] == 0].index, remove_n, replace=False)
+    df = df.drop(drop_indices)
     df = df.reset_index(drop=True).rename(columns=feature_names)
 
     train, test = train_test_split(df, test_size=0.1, stratify=df["isFraud"])
@@ -120,7 +125,7 @@ if __name__ == '__main__':
 
     text = create_explanation_texts(model, df_fraud[0:1], 1, feat_names, feature_description)
 
-    label = "Fraud"
+    label = "Betrug"
     probability = model.predict_proba(df_fraud[0:1])[0][1]
 
     # define the layout
@@ -130,7 +135,8 @@ if __name__ == '__main__':
             dcc.Tab(label='Allgemeine Übersicht', value='tab-1', children=[
                 html.Div([
                     html.H2("Allgemeine Übersicht"),
-                    html.H3(f"Klassifizierung: {label}          Wahrscheinlichkeit: {probability:,.2f}"),
+                    html.H3(f"Klassifizierung: {label}"),
+                    html.H3(f"Wahrscheinlichkeit: {probability:,.2f}"),
                     html.Table(
                         [html.Tr([html.Th(
                             dcc.Graph(
@@ -187,34 +193,33 @@ if __name__ == '__main__':
                         ]
                     )
                 ])
+            ]),
+            dcc.Tab(label='Interaktiver Tab', value='tab-4', children=[
+                html.Div([
+                    html.H2("Ändere Parameter um die Vorhersage zu ändern"),
+                    html.P("Transaktionswert:"),
+                    dcc.Slider(id='transaction', min=0, max=1000000, step=50000, value=current_x[0],
+                               marks={x: str(x) for x in range(0, 1000000, 100000)}),
+                    html.P("alter Kontostand Sender:"),
+                    dcc.Slider(id='old-konto-orig', min=0, max=1000000, step=50000, value=current_x[1],
+                               marks={x: str(x) for x in range(0, 1000000, 100000)}),
+                    html.P("neuer Kontostand Sender:"),
+                    dcc.Slider(id='new-konto-orig', min=0, max=1000000, step=50000, value=current_x[2],
+                               marks={x: str(x) for x in range(0, 1000000, 100000)}),
+                    html.P("alter Kontostand Empfänger:"),
+                    dcc.Slider(id='old-konto-dest', min=0, max=1000000, step=50000, value=current_x[3],
+                               marks={x: str(x) for x in range(0, 1000000, 100000)}),
+                    html.P("neuer Kontostand Empfänger:"),
+                    dcc.Slider(id='new-konto-dest', min=0, max=1000000, step=50000, value=current_x[4],
+                               marks={x: str(x) for x in range(0, 1000000, 1000000)}),
+                ]),
+                html.Div([
+                    html.H2("Veränderter Wert"),
+                    html.P(id='prediction'),
+                    html.P(id='probability')
+                ])
             ])
-
         ])
     ])
-    """,
-                dcc.Tab(label='Interaktiver Tab', value='tab-4', children=[
-                    html.Div([
-                        html.H2("Ändere Parameter um die Vorhersage zu ändern"),
-                        html.P("Transaktionswert:"),
-                        dcc.Slider(id='transaction', min=0, max=1000000, step=50000, value=current_x[0],
-                                   marks={x: str(x) for x in range(0, 1000000, 100000)}),
-                        html.P("alter Kontostand Sender:"),
-                        dcc.Slider(id='old-konto-orig', min=0, max=1000000, step=50000, value=current_x[1],
-                                   marks={x: str(x) for x in range(0, 1000000, 100000)}),
-                        html.P("neuer Kontostand Sender:"),
-                        dcc.Slider(id='new-konto-orig', min=0, max=1000000, step=50000, value=current_x[2],
-                                   marks={x: str(x) for x in range(0, 1000000, 100000)}),
-                        html.P("alter Kontostand Empfänger:"),
-                        dcc.Slider(id='old-konto-dest', min=0, max=1000000, step=50000, value=current_x[3],
-                                   marks={x: str(x) for x in range(0, 1000000, 100000)}),
-                        html.P("neuer Kontostand Empfänger:"),
-                        dcc.Slider(id='new-konto-dest', min=0, max=1000000, step=50000, value=current_x[4],
-                                   marks={x: str(x) for x in range(0, 1000000, 1000000)}),
-                    ]),
-                    html.Div([
-                        html.H2("Veränderter Wert"),
-                        html.P(id='prediction'),
-                        html.P(id='probability')
-                    ])
-                ])"""
+
     app.run_server(debug=True)

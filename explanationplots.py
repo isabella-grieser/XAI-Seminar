@@ -17,7 +17,7 @@ def create_feature_importance_plot(model, x_pred, feature_names, show_feature_am
     base = model.explainer.expected_value
 
     val = sum(shap)
-    if val > base:
+    if val < base:
         shap = -shap
 
     # remove index from shap value
