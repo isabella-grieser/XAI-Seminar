@@ -6,6 +6,7 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from explanationneighbors import *
+from utils import dummy_to_label
 
 
 def create_feature_importance_plot(model, x_pred, feature_names, show_feature_amount=5):
@@ -60,15 +61,15 @@ def create_class_cluster(model, x_pred):
     pca = PCA(n_components=2)
     components = pca.fit_transform(scaled_x)
 
+    pred_comp = pca.transform(scaler.transform([x_pred]))
+
     x_comp = components[:, 0]
     y_comp = components[:, 1]
 
-    fig = px.scatter(x=x_comp, y=y_comp, color=y, width=800, height=400)
-
-    pred_comp = pca.transform(scaler.transform([x_pred]))
-    fig.add_scatter(x=[pred_comp[0][0]], y=[pred_comp[0][1]], marker=dict(size=15, color='green'),
-                    showlegend=False)
-
+    fig = px.scatter(x=[pred_comp[0][0]], y=[pred_comp[0][1]]).update_traces(marker_size=20, marker_color="yellow")
+    fig.add_traces(
+        px.scatter(x=x_comp, y=y_comp, color=y, width=800, height=400).data
+    )
     return fig
 
 
@@ -93,6 +94,40 @@ def create_detailed_feature_plot(model, x_pred, index, feature, x_min=0, x_max=1
     ))
     fig.add_trace(go.Histogram(
         x=normal,
+        histnorm='probability density',
+        name='normal'
+    ))
+
+
+    fig.add_vline(x=val, line_width=3, line_color="green")
+    fig.update_layout(barmode='overlay')
+    fig.update_traces(opacity=0.75)
+    # fig.update_layout(xaxis=dict(range=[x_min, x_max]))
+
+    return fig
+
+def create_type_plot(model, x_pred):
+    # my guess: this works better for continuous features than class and classifier/enum features...
+    x = model.x
+    y = model.y
+
+    df = x
+    df["class"] = y
+    val = dummy_to_label(x_pred)
+
+    fraud = df[(df["class"] == 1)]
+    normal = df[(df["class"] == 0)]
+    fraud_list = fraud.apply(dummy_to_label, axis=1)
+    normal_list = normal.apply(dummy_to_label, axis=1)
+
+    fig = go.Figure()
+    fig.add_trace(go.Histogram(
+        x=fraud_list,
+        histnorm='probability density',
+        name='fraud'
+    ))
+    fig.add_trace(go.Histogram(
+        x=normal_list,
         histnorm='probability density',
         name='normal'
     ))

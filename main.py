@@ -4,9 +4,7 @@ from sklearn.model_selection import train_test_split
 from explanationtexts import *
 from dashtabs import *
 from dash import Dash, dcc, html, Input, Output
-import os
-from flask_caching import Cache
-import plotly.graph_objs as go
+from utils import *
 
 feature_description = {
     "Transaktionswert": "Der Wert dieser Transaktion",
@@ -14,6 +12,11 @@ feature_description = {
     "neuer Kontostand Sender": "text",
     "alter Kontostand Empfänger": "text",
     "neuer Kontostand Empfänger": "text",
+    "Zahlung": "text",
+    "Transfer": "text",
+    "Auszahlung": "text",
+    "Debit": "text",
+    "Einzahlung": "text"
 }
 
 feature_names = {
@@ -23,29 +26,30 @@ feature_names = {
     "newbalanceOrig": "neuer Kontostand Sender",
     "oldbalanceDest": "alter Kontostand Empfänger",
     "newbalanceDest": "neuer Kontostand Empfänger",
+    "type_PAYMENT": "Zahlung",
+    "type_TRANSFER": "Transfer",
+    "type_CASH_OUT": "Auszahlung",
+    "type_DEBIT": "Debit",
+    "type_CASH_IN": "Einzahlung",
 }
-
 continuous_variables = [feature_names["amount"], feature_names["oldbalanceOrg"], feature_names["newbalanceOrig"],
                         feature_names["oldbalanceDest"], feature_names["newbalanceDest"]]
-
-feat_names = [feature_names["amount"], feature_names["oldbalanceOrg"], feature_names["newbalanceOrig"],
-              feature_names["oldbalanceDest"], feature_names["newbalanceDest"]]
 
 # Create the Dash app
 app = Dash(__name__)
 
 timeout = 20
 
-
+current_x = None
+columns = None
+detailed_plots = {}
 # all dash callbacks
 @app.callback(
     Output('single-feature-plot', 'figure'),
     Input('dropdown-feature', 'value')
 )
 def change_feat_view(value):
-    index = feat_names.index(value)
-    return create_detailed_feature_plot(model, current_x, index, value, x_max=100000)
-
+    return detailed_plots[value]
 
 
 @app.callback(
@@ -55,11 +59,13 @@ def change_feat_view(value):
     Input('old-konto-orig', 'value'),
     Input('new-konto-orig', 'value'),
     Input('old-konto-dest', 'value'),
-    Input('new-konto-dest', 'value')
+    Input('new-konto-dest', 'value'),
+    Input('type-feature', 'value')
 )
-def change_prediction(transaction, old_konto_orig, new_konto_orig, old_konto_dest, new_konto_dest):
-    x_new = [[transaction, old_konto_orig, new_konto_orig, old_konto_dest, new_konto_dest]]
-    df = pd.DataFrame(x_new, columns=feat_names)
+def change_prediction(transaction, old_konto_orig, new_konto_orig, old_konto_dest, new_konto_dest, type):
+    x_new = [transaction, old_konto_orig, new_konto_orig, old_konto_dest, new_konto_dest]
+    x_new = label_to_dummy(x_new, type)
+    df = pd.DataFrame([x_new], columns=columns)
     prediction = model.predict(df)[0]
     prob = model.predict_proba(df)[0][prediction]
 
@@ -68,16 +74,12 @@ def change_prediction(transaction, old_konto_orig, new_konto_orig, old_konto_des
     prob_text = "Wahrscheinlichkeit: " + str(prob)
     return predic_text, prob_text
 
-
-current_x = None
-
-
 def get_data():
     df = pd.read_csv("data/paysim.csv")
     df = df.drop("isFlaggedFraud", axis=1)
 
-    df = df.drop(['nameOrig', 'nameDest', 'type', 'step'], axis=1)
-
+    df = df.drop(['nameOrig', 'nameDest', 'step'], axis=1)
+    df = pd.get_dummies(df, columns=['type'])
     #there are massive performance issues because the dataset is far too big
     # possible solution: drop random values over oversampled class isFraud=0
     remove_n = 4000000
@@ -109,7 +111,6 @@ if __name__ == '__main__':
     # model.train(iterations=300, do_train=True, load=False, save=True)
 
     y_hat = model.predict(x_test)
-    # model.explain(x_test.iloc[0])
 
     df_test = x_test
     df_test["label"] = y_hat
@@ -118,12 +119,19 @@ if __name__ == '__main__':
 
     # current workaround to deal with the callbacks
     current_x = df_fraud.iloc[0]
+    columns = df_fraud.columns.tolist()
 
     table_basic_1, table_basic_2, fig_feat_basic, fig_class_basic = \
-        create_introduction_page_fig(model, df_fraud.iloc[0], feat_names, show_feature_amount=3)
-    neighbors_tables = create_deep_dive_page_fig(model, df_fraud.iloc[0], feat_names)
+        create_introduction_page_fig(model, df_fraud.iloc[0], df_fraud.columns, show_feature_amount=3)
+    neighbors_tables = create_neighbors_page_fig(model, df_fraud[0:1], df_fraud.columns)
 
-    text = create_explanation_texts(model, df_fraud[0:1], 1, feat_names, feature_description)
+    text = create_explanation_texts(model, df_fraud[0:1], 1, df_fraud.columns, feature_description)
+
+    for index, f in enumerate(df_fraud.columns.tolist()[:-5] + ["Transaktionsart"]):
+        if f != "Transaktionsart":
+            detailed_plots[f] = create_detailed_feature_plot(model, current_x, index, f, x_max=100000)
+        else:
+            detailed_plots[f] = create_type_plot(model, current_x)
 
     label = "Betrug"
     probability = model.predict_proba(df_fraud[0:1])[0][1]
@@ -172,7 +180,7 @@ if __name__ == '__main__':
                 html.Div([
                     html.H2(
                         "Verteilungen der Featurewerte für die einzelnen Features + wo der jeweilige Datenpunkt liegt"),
-                    dcc.Dropdown(feat_names, feat_names[0], id='dropdown-feature'),
+                    dcc.Dropdown(df_fraud.columns.tolist()[:-5] + ["Transaktionsart"], df_fraud.columns[0], id='dropdown-feature'),
                     dcc.Graph(id='single-feature-plot')
                 ]),
                 html.Div([html.H2("Regelbasierte Textgenerierung")] +
@@ -211,7 +219,10 @@ if __name__ == '__main__':
                                marks={x: str(x) for x in range(0, 1000000, 100000)}),
                     html.P("neuer Kontostand Empfänger:"),
                     dcc.Slider(id='new-konto-dest', min=0, max=1000000, step=50000, value=current_x[4],
-                               marks={x: str(x) for x in range(0, 1000000, 1000000)}),
+                               marks={x: str(x) for x in range(0, 1000000, 100000)}),
+                    html.P("Zahlungsart:"),
+                    dcc.Dropdown(["Zahlung", "Transfer", "Auszahlung", "Debit", "Einzahlung"]
+                                 , dummy_to_label(current_x), id='type-feature'),
                 ]),
                 html.Div([
                     html.H2("Veränderter Wert"),
