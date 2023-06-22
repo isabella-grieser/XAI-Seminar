@@ -139,6 +139,7 @@ if __name__ == '__main__':
 
     # define the layout
     app.layout = html.Div([
+        html.Img(src='ING_new.png', alt='ING Logo', style={'float': 'right'}),
         html.H1("XAI for Fraud Detection"),
         dcc.Tabs(id="tabs", value='tab-1', children=[
             dcc.Tab(label='Allgemeine Übersicht', value='tab-1', children=[
@@ -150,7 +151,8 @@ if __name__ == '__main__':
                         [html.Tr([html.Th(
                             dcc.Graph(
                                 id='basic-table-1',
-                                figure=table_basic_1
+                                figure=table_basic_1,
+                                style={'position': 'relative', 'top': '-200px'}
                             ),
                             rowSpan=2
                         ),
@@ -163,7 +165,8 @@ if __name__ == '__main__':
                             html.Th(
                                 dcc.Graph(
                                     id='basic-table-2',
-                                    figure=table_basic_2
+                                    figure=table_basic_2,
+                                    style = {'position': 'relative', 'top': '-200px'}
                                 ),
                                 rowSpan=2
                             )
