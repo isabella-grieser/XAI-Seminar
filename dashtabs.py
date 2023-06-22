@@ -18,6 +18,8 @@ def create_introduction_page_fig(model, x_pred, feature_names, show_feature_amou
     n = [pred, prob[0][y_hat[0]]] + n
     feature_names_table = ["Vorhersage", "Wahrscheinlichkeit"] + feature_names_table
     table2 = create_table(n, feature_names_table)
+    table2.update_layout(title_text=f"Ähnlichster Fall:")
+    table2.update_layout({"margin": {"t": 50}})
 
     feat_fig = create_feature_importance_plot(model, x_pred, feature_names, show_feature_amount=show_feature_amount)
     class_fig = create_class_cluster(model, x_pred)
