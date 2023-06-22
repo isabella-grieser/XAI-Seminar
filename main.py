@@ -82,7 +82,7 @@ def get_data():
     df = pd.get_dummies(df, columns=['type'])
     #there are massive performance issues because the dataset is far too big
     # possible solution: drop random values over oversampled class isFraud=0
-    remove_n = 4000000
+    remove_n = 3000000
     drop_indices = np.random.choice(df[df['isFraud'] == 0].index, remove_n, replace=False)
     df = df.drop(drop_indices)
     df = df.reset_index(drop=True).rename(columns=feature_names)
@@ -135,6 +135,7 @@ if __name__ == '__main__':
 
     label = "Betrug"
     probability = model.predict_proba(df_fraud[0:1])[0][1]
+    # counterfactuals = get_n_counterfactuals(model, df_fraud[0:1], n_factuals=3)
 
     # define the layout
     app.layout = html.Div([

@@ -27,7 +27,7 @@ def create_introduction_page_fig(model, x_pred, feature_names, show_feature_amou
 
 def create_neighbors_page_fig(model, x, feature_names):
     x_pred = x.iloc[0]
-    neighbors, distances = get_n_neighbors_information(model, x_pred, n_neighbors=4)
+    neighbors, distances = get_n_neighbors_information(model, x_pred, n_neighbors=3)
     table_list = []
     y_hat = model.predict(neighbors)
     prob = model.predict_proba(neighbors)

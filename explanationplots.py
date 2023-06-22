@@ -35,15 +35,14 @@ def create_feature_importance_plot(model, x_pred, feature_names, show_feature_am
         values.append([feat['col_name'], feat["shap_value"]])
 
     sum_rest = feature_importance.iloc[show_feature_amount:]['shap_value'].sum(axis=0)
-    values.append(["other", sum_rest])
+    values.append(["andere", sum_rest])
     values.reverse()
 
     df = pd.DataFrame(values, columns=['label', 'value'])
-    df["positive"] = df["value"] > 0
-
+    df["color"] = np.where(df["value"] < 0, 'red', 'blue')
     max_val = feature_importance.iloc[0]["shap_value"]
 
-    fig = px.bar(y=df.index, x=df.value, color=df.positive, orientation='h', text=df.label)
+    fig = px.bar(y=df.index, x=df.value, color=df["color"], orientation='h', text=df.label)
     fig.update_yaxes(showticklabels=False)
     fig.update_layout(showlegend=False)
     fig.update_traces(textposition='inside')
@@ -54,7 +53,7 @@ def create_feature_importance_plot(model, x_pred, feature_names, show_feature_am
 
 def create_class_cluster(model, x_pred):
     x = model.x
-    y = np.array(["Fraud" if f == 1 else "Not Fraud" for f in model.y])
+    y = np.array(["Betrug" if f == 1 else "Kein Betrug" for f in model.y])
 
     scaler = StandardScaler().fit(x)
     scaled_x = scaler.transform(x)
@@ -90,12 +89,12 @@ def create_detailed_feature_plot(model, x_pred, index, feature, x_min=0, x_max=1
     fig.add_trace(go.Histogram(
         x=fraud,
         histnorm='probability density',
-        name='fraud'
+        name='Betrug'
     ))
     fig.add_trace(go.Histogram(
         x=normal,
         histnorm='probability density',
-        name='normal'
+        name='Kein Betrug'
     ))
 
 
