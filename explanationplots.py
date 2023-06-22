@@ -143,9 +143,11 @@ def create_type_plot(model, x_pred):
 def create_table(x, feature_names):
     values = dict(values=[feature_names, x],
                   fill_color='lavender',
-                  align='left')
+                  align='left'
+                  )
+
     fig = go.Figure(data=[go.Table(header=dict(values=['Features', 'Values']),
                                     cells=values)])
-    fig.update_layout(width=500, height=500)
+    fig.update_layout(width=400, height=800)
     return fig
 

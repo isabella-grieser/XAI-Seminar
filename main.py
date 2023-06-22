@@ -1,5 +1,6 @@
 import base64
 
+from explanationcounterfactuals import get_n_counterfactuals
 from explanationplots import *
 from model import ExplainableModel
 from sklearn.model_selection import train_test_split
@@ -137,13 +138,18 @@ if __name__ == '__main__':
 
     label = "Betrug"
     probability = model.predict_proba(df_fraud[0:1])[0][1]
-    # counterfactuals = get_n_counterfactuals(model, df_fraud[0:1], n_factuals=3)
+
     ing_png = 'ING_new.png'
     ing_base64 = base64.b64encode(open(ing_png, 'rb').read()).decode('ascii')
 
     # define the layout
     app.layout = html.Div([
-        html.Img(src='data:image/png;base64,{}'.format(ing_base64), style={'float': 'right'}),
+        html.Img(src='data:image/png;base64,{}'.format(ing_base64),
+                 style={
+                     'float': 'right',
+                     "width": "100px",
+                     "height": "auto"
+    }),
         html.H1("XAI für Betrugserkennung"),
         dcc.Tabs(id="tabs", value='tab-1', children=[
             dcc.Tab(label='Allgemeine Übersicht', value='tab-1', children=[
@@ -170,7 +176,7 @@ if __name__ == '__main__':
                                 dcc.Graph(
                                     id='basic-table-2',
                                     figure=table_basic_2,
-                                    style = {'position': 'relative', 'top': '-200px'}
+                                    style={'position': 'relative', 'top': '-200px'}
                                 ),
                                 rowSpan=2
                             )
@@ -206,7 +212,10 @@ if __name__ == '__main__':
                                 figure=t
                             )
                         ) for i, t in enumerate(neighbors_tables)])
-                        ]
+                        ],
+                        style={"cellspacing": "0",
+                                 "border-collapse": "collapse"
+                                 }
                     )
                 ])
             ]),
