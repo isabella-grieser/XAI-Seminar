@@ -190,7 +190,10 @@ if __name__ == '__main__':
                             )
                         ]
                     )
-                ])
+                ]),
+                html.Div([html.H2("Regelbasierte Textgenerierung")] +
+                         [html.P(t) for t in text]
+                         )
             ]),
             dcc.Tab(label='Deep Dive Verdachtsfall', value='tab-2', children=[
                 html.Div([
@@ -198,10 +201,7 @@ if __name__ == '__main__':
                         "Verteilungen der Featurewerte für die einzelnen Features + wo der jeweilige Datenpunkt liegt"),
                     dcc.Dropdown(df_fraud.columns.tolist()[:-5] + ["Transaktionsart"], df_fraud.columns[0], id='dropdown-feature'),
                     dcc.Graph(id='single-feature-plot')
-                ]),
-                html.Div([html.H2("Regelbasierte Textgenerierung")] +
-                         [html.P(t) for t in text]
-                         )
+                ])
             ]),
             dcc.Tab(label='Ähnliche Fälle', value='tab-3', children=[
                 html.Div([
