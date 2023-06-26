@@ -168,22 +168,24 @@ if __name__ == '__main__':
                         ),
                             html.Th(
                                 dcc.Graph(
-                                    id='class-plot',
-                                    figure=fig_class_basic
+                                    id='basic-feat-view',
+                                    figure=fig_feat_basic,
+                                    style={'position': 'relative', 'top': '-100px'}
                                 )
                             ),
                             html.Th(
                                 dcc.Graph(
                                     id='basic-table-2',
                                     figure=table_basic_2,
-                                    style={'position': 'relative', 'top': '-200px'}
+                                    style={'position': 'relative', 'top': '-150px'}
                                 ),
                                 rowSpan=2
                             )
                         ]),
                             html.Tr([html.Th(dcc.Graph(
-                                id='basic-feat-view',
-                                figure=fig_feat_basic)
+                                id='class-plot',
+                                figure=fig_class_basic),
+                                style={'position': 'relative', 'top': '-150px'}
                             )]
                             )
                         ]
