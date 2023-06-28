@@ -42,7 +42,8 @@ def create_feature_importance_plot(model, x_pred, feature_names, show_feature_am
     df["color"] = np.where(df["value"] < 0, 'red', 'blue')
     max_val = feature_importance.iloc[0]["shap_value"]
 
-    fig = px.bar(y=df.index, x=df.value, color=df["color"], orientation='h', text=df.label)
+    fig = px.bar(y=df.index, x=df.value, color=df["color"], orientation='h', text=df.label,
+                 width=800, height=350)
     fig.update_yaxes(showticklabels=False)
     fig.update_layout(showlegend=False)
     fig.update_traces(textposition='inside')
@@ -65,7 +66,8 @@ def create_class_cluster(model, x_pred):
     x_comp = components[:, 0]
     y_comp = components[:, 1]
 
-    fig = px.scatter(x=[pred_comp[0][0]], y=[pred_comp[0][1]]).update_traces(marker_size=20, marker_color="yellow")
+    fig = px.scatter(x=[pred_comp[0][0]], y=[pred_comp[0][1]],
+                     width=800, height=350).update_traces(marker_size=20, marker_color="yellow")
     fig.add_traces(
         px.scatter(x=x_comp, y=y_comp, color=y, width=800, height=400).data
     )

@@ -3,7 +3,7 @@ import pandas as pd
 
 
 
-def create_explanation_texts(model, x_pred, y_pred, feature_names, feature_description, show_feature_amount=5,
+def create_explanation_texts(model, x_pred, y_pred, feature_names, feature_description, show_feature_amount=4,
                              threshold=.05):
     explain_val = x_pred.iloc[0].to_numpy().reshape(1, -1)[0]
     model.load_explainer()

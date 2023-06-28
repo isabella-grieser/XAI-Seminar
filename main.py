@@ -161,33 +161,29 @@ if __name__ == '__main__':
                         [html.Tr([html.Th(
                             dcc.Graph(
                                 id='basic-table-1',
-                                figure=table_basic_1,
-                                style={'position': 'relative', 'top': '-200px'}
+                                figure=table_basic_1
                             ),
-                            rowSpan=2
+                            style={'vertical-align': 'baseline'}
                         ),
-                            html.Th(
+                            html.Th(html.Div(className='plots', children=[
                                 dcc.Graph(
                                     id='basic-feat-view',
                                     figure=fig_feat_basic,
-                                    style={'position': 'relative', 'top': '-100px'}
-                                )
-                            ),
+                                    #style={'position': 'relative', 'top': '-100px'}
+                                ),
+                                dcc.Graph(
+                                    id='class-plot',
+                                    figure=fig_class_basic)
+                            ])),
                             html.Th(
                                 dcc.Graph(
                                     id='basic-table-2',
                                     figure=table_basic_2,
-                                    style={'position': 'relative', 'top': '-150px'}
+                                    #style={'position': 'relative', 'top': '-150px'}
                                 ),
-                                rowSpan=2
+                                style={'vertical-align': 'baseline'}
                             )
-                        ]),
-                            html.Tr([html.Th(dcc.Graph(
-                                id='class-plot',
-                                figure=fig_class_basic),
-                                style={'position': 'relative', 'top': '-150px'}
-                            )]
-                            )
+                        ])
                         ]
                     )
                 ]),
@@ -198,7 +194,7 @@ if __name__ == '__main__':
             dcc.Tab(label='Deep Dive Verdachtsfall', value='tab-2', children=[
                 html.Div([
                     html.H2(
-                        "Verteilungen der Featurewerte für die einzelnen Features + wo der jeweilige Datenpunkt liegt"),
+                        "Verteilungen der Featurewerte für die einzelnen Features"),
                     dcc.Dropdown(df_fraud.columns.tolist()[:-5] + ["Transaktionsart"], df_fraud.columns[0], id='dropdown-feature'),
                     dcc.Graph(id='single-feature-plot')
                 ])
@@ -206,7 +202,8 @@ if __name__ == '__main__':
             dcc.Tab(label='Ähnliche Fälle', value='tab-3', children=[
                 html.Div([
                     html.H2("Allgemeine Übersicht"),
-                    html.H3(f"Klassifizierung: {label}          Wahrscheinlichkeit: {probability:,.2f}"),
+                    html.H3(f"Klassifizierung: {label}"),
+                    html.H3(f"Wahrscheinlichkeit: {probability:,.2f}"),
                     html.Table(
                         [html.Tr([html.Th(
                             dcc.Graph(
