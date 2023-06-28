@@ -11,15 +11,15 @@ from utils import *
 
 feature_description = {
     "Transaktionswert": "Der Wert dieser Transaktion",
-    "alter Kontostand Sender": "text",
-    "neuer Kontostand Sender": "text",
-    "alter Kontostand Empfänger": "text",
-    "neuer Kontostand Empfänger": "text",
-    "Zahlung": "text",
-    "Transfer": "text",
-    "Auszahlung": "text",
-    "Debit": "text",
-    "Einzahlung": "text"
+    "alter Kontostand Sender": "Der alte Kontostand des Senders",
+    "neuer Kontostand Sender": "Der neue Kontostand des Senders",
+    "alter Kontostand Empfänger": "Der alte Kontostand des Empfängers",
+    "neuer Kontostand Empfänger": "Der neue Kontostand des Empfängers",
+    "Zahlung": "Die Zahlungsart: Zahlung",
+    "Transfer": "Die Zahlungsart: Transfer",
+    "Auszahlung": "Die Zahlungsart: Auszahlung",
+    "Debit": "Die Zahlungsart: Debit",
+    "Einzahlung": "Die Zahlungsart: Einzahlung"
 }
 
 feature_names = {
