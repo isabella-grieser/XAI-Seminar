@@ -1,5 +1,7 @@
 import base64
 
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
+
 from explanationcounterfactuals import get_n_counterfactuals
 from explanationplots import *
 from model import ExplainableModel
@@ -85,9 +87,9 @@ def get_data():
     df = pd.get_dummies(df, columns=['type'])
     #there are massive performance issues because the dataset is far too big
     # possible solution: drop random values over oversampled class isFraud=0
-    remove_n = 3000000
-    drop_indices = np.random.choice(df[df['isFraud'] == 0].index, remove_n, replace=False)
-    df = df.drop(drop_indices)
+    # remove_n = 3000000
+    # drop_indices = np.random.choice(df[df['isFraud'] == 0].index, remove_n, replace=False)
+    # df = df.drop(drop_indices)
     df = df.reset_index(drop=True).rename(columns=feature_names)
 
     train, test = train_test_split(df, test_size=0.1, stratify=df["isFraud"])
@@ -119,6 +121,12 @@ if __name__ == '__main__':
     df_test["label"] = y_hat
     df_fraud = df_test[df_test["label"] == 1]
     df_fraud = df_fraud.drop(['label'], axis=1)
+
+    print(y_hat)
+    print("F1: " + str(f1_score(y_test, y_hat)))
+    print("Precision: " + str(precision_score(y_test, y_hat)))
+    print("Recall: " + str(recall_score(y_test, y_hat)))
+    print("Accuracy: " + str(accuracy_score(y_test, y_hat)))
 
     # current workaround to deal with the callbacks
     current_x = df_fraud.iloc[0]
